@@ -426,7 +426,7 @@ class CausalDDIAgent:
         print("Initialization complete!")
         print("="*70)
         
-    def discover_ddi_adverse_effects(self, top_n: int = 10):
+    def discover_ddi_adverse_effects(self, top_n: int = 10, target_drug: str = None):
         """Main pipeline: discover drug-drug interactions causing adverse effects"""
         print("\n" + "="*70)
         print("PHASE 1: Candidate Selection")
@@ -435,6 +435,13 @@ class CausalDDIAgent:
         # Select candidates
         selector = CandidateSelector(self.combo_df, self.reac_df)
         candidates = selector.select_candidates(min_cases=10)
+        
+        # Filter to target drug if specified
+        if target_drug:
+            target_drug_upper = target_drug.upper().strip()
+            candidates = candidates[candidates['combo'].str.contains(target_drug_upper, regex=False)]
+            print(f"\nFiltered to combinations containing: {target_drug_upper}")
+            print(f"Found {len(candidates)} candidates with {target_drug_upper}")
         
         print(f"\nTop {top_n} candidates by frequency:")
         print("-"*70)
@@ -495,7 +502,11 @@ def main():
     """Run the causal DDI agent"""
     agent = CausalDDIAgent()
     agent.initialize()
-    candidates, causal_results = agent.discover_ddi_adverse_effects(top_n=10)
+    
+    # Focus on one drug and all its combinations (faster, more focused analysis)
+    # Change target_drug to None to analyze all combinations
+    target_drug = "WARFARIN"  # Example: focus on warfarin combinations
+    candidates, causal_results = agent.discover_ddi_adverse_effects(top_n=10, target_drug=target_drug)
     
     significant_results = [r for r in causal_results if r.get('significant', False)]
     
